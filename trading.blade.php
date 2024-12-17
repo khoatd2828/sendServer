@@ -180,7 +180,7 @@
                                                     <div class="py-3 px-1">{{ $item['liquidity'] }}</div>
                                                 </td>
                                                 <td class="min-w-fit border-table-middle">
-                                                    <div class="py-3 text-center pb-1 px-1 border-solid border-b border-b-neutral-700"></div>
+                                                    <div class="py-3 text-center pb-1 px-1 border-solid border-b border-b-neutral-700">{{ $item['recommendations'] }}</div>
                                                     <?php if (isset($resultExcel[$key][0])) { ?>
                                                         <?php $eitem = $resultExcel[$key][0]; ?>
                                                         <div class="flex pt-1 pb-3 text-[0.6rem]">
@@ -244,8 +244,8 @@
                         $filteredData = [];
                         foreach ($dataN as $key => $group) {
                             foreach ($group as $item) {
-                                $item['provisionalInterest'] = (float)$item['provisionalInterest']; 
-                                $filteredData[] = array_merge($item, ['group' => $key]); 
+                                $item['provisionalInterest'] = (float)$item['provisionalInterest'];
+                                $filteredData[] = array_merge($item, ['group' => $key]);
                             }
                         }
                         // Sắp xếp theo lãi tạm tính (giảm dần)
@@ -256,18 +256,18 @@
                         foreach ($filteredData as &$item) {
                             $item['provisionalInterest'] = ($item['provisionalInterest'] >= 0 ? '+' : '') . $item['provisionalInterest'] . '%';
                         }
-                        unset($item); 
-                        
+                        unset($item);
+
                         $restructuredData = [];
                         foreach ($filteredData as $item) {
-                            $ticker = $item['ticker']; 
-                            unset($item['group']); 
+                            $ticker = $item['ticker'];
+                            unset($item['group']);
 
                             if (!isset($restructuredData[$ticker])) {
                                 $restructuredData[$ticker] = [];
                             }
 
-                            $restructuredData[$ticker][] = $item; 
+                            $restructuredData[$ticker][] = $item;
                         }
                     ?>
                         <div class="p-2 lg:p-4 border border-[#3F3F3F] border-solid rounded-[26px] max-w-full overflow-auto">
@@ -661,4 +661,116 @@
         });
     });
 </script> -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const eventSource = new EventSource('/sse-data'); // Kết nối SSE
+
+        eventSource.onmessage = function(event) {
+            let data = JSON.parse(event.data);
+
+            // Kiểm tra nếu dữ liệu vẫn còn là chuỗi JSON
+            if (typeof data === "string") {
+                data = JSON.parse(data);
+            }
+
+            console.log("data nhận được:", data);
+
+            // Duyệt qua từng ticker trong dữ liệu
+            Object.keys(data).forEach(ticker => {
+                const items = data[ticker]; // Đây là mảng các object
+
+                // Lấy các hàng trong bảng tương ứng với ticker
+                const rows = document.querySelectorAll(`tr[data-title="${ticker}"]`);
+
+                rows.forEach((row, index) => {
+                    // Lấy item tương ứng từ mảng, đảm bảo không vượt quá chiều dài của mảng
+                    const item = items[index];
+                    if (!item) return; // Bỏ qua nếu không có dữ liệu
+
+                    let div;
+
+                    // 1. Cột Ticker
+                    div = row.querySelector('.border-table-left > div');
+                    if (div) div.innerText = ticker;
+
+                    // 2. Cột Tín hiệu
+                    div = row.querySelectorAll('.border-table-middle')[0]?.querySelector('div');
+                    if (div) div.innerText = item.signal;
+
+                    // 3. Cột Giá khuyến nghị
+                    div = row.querySelectorAll('.border-table-middle')[1]?.querySelector('div');
+                    if (div) div.innerText = item.recommendedPrice;
+
+                    // 4. Cột Giá hiện tại
+                    div = row.querySelectorAll('.border-table-middle')[2]?.querySelector('div');
+                    if (div) div.innerText = item.currentPrice;
+
+                    // 5. Cột Ngày
+                    div = row.querySelector('.text-\\[0\\.6rem\\].border-table-middle div');
+                    if (div) div.innerText = new Date(item.date).toLocaleString();
+
+                    // 6. Cột T+
+                    div = row.querySelectorAll('.border-table-middle')[4]?.querySelector('div');
+                    if (div) div.innerText = item.transactionTime;
+
+                    // 7. Cột Target1
+                    div = row.querySelectorAll('.border-table-middle')[5]?.querySelector('div > .bg-primary');
+                    if (div) {
+                        div.innerText = item.target1 || "\u00A0";
+                        div.classList.add('py-1', 'px-2');
+                    }
+
+                    // 8. Cột Target2
+                    div = row.querySelectorAll('.border-table-middle')[6]?.querySelector('div > .bg-primary');
+                    if (div) {
+                        div.innerText = item.target2 || "\u00A0";
+                        div.classList.add('py-1', 'px-2');
+                    }
+
+                    // 9. Cột Stoploss
+                    div = row.querySelectorAll('.border-table-middle')[7]?.querySelector('div');
+                    if (div) div.innerText = item.stoploss;
+
+                    // 10. Cột Density
+                    div = row.querySelectorAll('.border-table-middle')[8]?.querySelector('div');
+                    if (div) div.innerText = item.density;
+
+                    // 11. Cột Lãi tạm tính
+                    div = row.querySelectorAll('.border-table-middle')[9]?.querySelector('div');
+                    if (div) {
+                        div.innerText = item.provisionalInterest;
+
+                        // Cập nhật màu sắc
+                        div.classList.remove('text-red', 'text-primary', 'text-yellow');
+                        if (parseFloat(item.provisionalInterest) > 0) {
+                            div.classList.add('text-primary');
+                        } else if (parseFloat(item.provisionalInterest) === 0) {
+                            div.classList.add('text-yellow');
+                        } else {
+                            div.classList.add('text-red');
+                        }
+                    }
+
+                    // 12. Cột Thanh khoản
+                    div = row.querySelectorAll('.border-table-middle')[10]?.querySelector('div');
+                    if (div) div.innerText = item.liquidity;
+
+                    // 13. Cột Khuyến nghị hiện tại
+                    div = row.querySelectorAll('.border-table-middle')[11]?.querySelector('div:first-child');
+                    if (div) div.innerText = item.recommendations || "";
+                });
+            });
+        };
+
+        eventSource.onerror = function(error) {
+            console.error('Lỗi kết nối SSE:', error);
+            eventSource.close();
+        };
+
+        console.log('SSE đã được kết nối');
+    });
+</script>
+
+
 @endsection
