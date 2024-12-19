@@ -266,7 +266,7 @@ class HomeController extends Controller
             'http' => array(
                 'method' => 'POST',
                 'header' => "Content-type: application/json\r\n",
-                'content' => '{"StockMarketRequest": {"date":"2024-07-12"}}',
+                'content' => '{"StockMarketRequest": {"date":"2024-12-18"}}',
             )
         );
         $context2  = stream_context_create($options2);
@@ -276,7 +276,27 @@ class HomeController extends Controller
         $dataP = $json_data2['StockMarketReply'];
 
         $dash1 = Dashboard::find(1);
-        return view('home.trends', compact('data2', 'dash1', 'dataP'));
+
+        $data = DB::table('uptrends')
+            ->where('ticker', 'VNINDEX') 
+            ->orderBy('date', 'desc')    
+            ->take(5)                   
+            ->get();
+
+        $data = $data->map(function ($row) {
+            if ($row->close > $row->sma20 && $row->ema6 > $row->sma20) {
+                $row->trend = "UPTREND";
+            } elseif ($row->close < $row->sma20 && $row->ema6 < $row->sma20) {
+                $row->trend = "DOWNTREND";
+            } else {
+                $row->trend = "SIDEWAY";
+            }
+            return $row;
+        });
+
+        $latestData = $data->first();
+
+        return view('home.trends', compact('data2', 'dash1', 'dataP', 'data', 'latestData'));
     }
 
     public function power()
@@ -302,9 +322,9 @@ class HomeController extends Controller
         });
 
         $datatop15 = DB::table('TOP15')
-        ->orderBy('vol', 'desc')
-        ->limit(15)
-        ->get();
+            ->orderBy('vol', 'desc')
+            ->limit(15)
+            ->get();
 
         return view('home.power', compact('dash2', 'data', 'datatop15'));
     }
@@ -435,9 +455,9 @@ class HomeController extends Controller
         );
 
         $context  = stream_context_create($options);
-
         $json = file_get_contents($url, false, $context);
         $json_data = json_decode($json, true);
+
         if (isset($json_data['BuySellReply']['stockDatas'])) {
             return $json_data;
         } else {
