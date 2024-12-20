@@ -14,6 +14,8 @@ PAYLOAD_REALTIME = {"TotalTradeRealRequest": {"account": "StockTraders"}}
 
 # Danh sách các nhóm ngành và chỉ số
 categories = {
+    "VN30": ["ACB", "BCM", "BID", "BVH", "CTG", "FPT", "GAS", "GVR", "HDB", "HPG", "MBB", "MSN", "MWG", "PLX", "POW", "SAB", "SHB", "SSB", "SSI", "STB", "TCB", "TPB", "VCB", "VHM", "VIB", "VIC", "VJC", "VNM", "VPB", "VRE"],
+    "VN50": ["ACB", "CTG", "DCM", "DGC", "DIG", "DPM", "FPT", "FRT", "GEX", "GMD", "HCM", "HDB", "HPG", "HSG", "KBC", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NLG", "PDR", "PVD", "PVS", "SHB", "SSI", "STB", "TCB", "TPB", "VCB", "VCG", "VCI", "VHM", "VIB", "VIC", "VJC", "VND", "VNM", "VPB", "VPI", "VRE"],
     "bank": ["ACB", "BID", "CTG", "EIB", "LPB", "MBB", "VPB", "SHB", "STB", "VCB", "VIB", "TCB", "HDB", "MSB", "OCB", "TPB", "ABB", "BVB"],
     "securities": ["AGR", "BSI", "BVS", "CTS", "FTS", "HCM", "MBS", "SHS", "SSI", "TVS", "VCI", "VDS", "VIX", "VND"],
     "realEstate": ["PDR", "KDH", "KBC", "DIG", "NLG", "DXG", "HDG", "TCH", "CEO", "SZC", "HDC", "SCR", "NTL", "VHM", "VPI", "AGG", "CRE", "HPX", "VRE"],
@@ -21,9 +23,7 @@ categories = {
     "tech": ["FPT", "VTP", "CMG", "ELC", "ITD", "FOX", "VGI", "YEG", "TTN", "MFS"],
     "chemical": ["PVD", "GAS", "PVS", "PVT", "DGC", "DPM", "DCM", "OIL", "PLX", "BSR", "PVB", "CSV", "DDV"],
     "steelConstruction": ["HPG", "HSG", "NKG", "TLS", "TVN", "VGS", "CTD", "VCG", "FCN", "KSB", "PLC", "PC1", "CII", "DPG", "TV2", "LCG", "C32", "C4G"],
-    "importExport": ["VCS", "TCM", "TNG", "VGT", "VGG", "GIL", "DRC", "GMD", "HAH", "ANV", "VHC", "FMC", "VSC", "ASM", "IDI"],
-    "VN30": ["ACB", "BCM", "BID", "BVH", "CTG", "FPT", "GAS", "GVR", "HDB", "HPG", "MBB", "MSN", "MWG", "PLX", "POW", "SAB", "SHB", "SSB", "SSI", "STB", "TCB", "TPB", "VCB", "VHM", "VIB", "VIC", "VJC", "VNM", "VPB", "VRE"],
-    "VN50": ["ACB", "CTG", "DCM", "DGC", "DIG", "DPM", "FPT", "FRT", "GEX", "GMD", "HCM", "HDB", "HPG", "HSG", "KBC", "KDH", "LPB", "MBB", "MSB", "MSN", "MWG", "NLG", "PDR", "PVD", "PVS", "SHB", "SSI", "STB", "TCB", "TPB", "VCB", "VCG", "VCI", "VHM", "VIB", "VIC", "VJC", "VND", "VNM", "VPB", "VPI", "VRE"]
+    "importExport": ["VCS", "TCM", "TNG", "VGT", "VGG", "GIL", "DRC", "GMD", "HAH", "ANV", "VHC", "FMC", "VSC", "ASM", "IDI"]
 }
 
 # Hàm lấy dữ liệu từ API
@@ -97,7 +97,7 @@ def calculate_sma_and_percentages(historical_data, realtime_data):
 
 
 def upsert_to_mysql(df, table_name, engine):
-    """Upsert dữ liệu vào MySQL cho ngày mới nhất."""
+    """Xóa dữ liệu cũ cho ngày trước khi thêm mới."""
     try:
         # Làm tròn các giá trị số liệu đến 2 chữ số thập phân
         df = df.round(2)
@@ -109,67 +109,47 @@ def upsert_to_mysql(df, table_name, engine):
                 print(f"Processing date: {row_date}")
                 print(f"Data being processed: {row.to_dict()}")
 
-                # Kiểm tra nếu ngày đã tồn tại
-                query_check = f"""
-                SELECT date 
-                FROM {table_name} 
+                # Xóa dữ liệu cũ không cần kiểm tra
+                print(f"Deleting old data for date: {row_date}")
+                query_delete = f"""
+                DELETE FROM {table_name}
                 WHERE `date` = :date
                 """
-                result = connection.execute(
-                    text(query_check),
+                rows_deleted = connection.execute(
+                    text(query_delete),
                     {"date": row_date}
-                ).fetchone()
+                ).rowcount  # Đếm số dòng đã xóa
 
-                if result:
-                    # Nếu ngày đã tồn tại, thực hiện cập nhật
-                    print(f"Updating data for date: {row_date}")
-                    query_update = f"""
-                    UPDATE {table_name}
-                    SET 
-                        CP_SMA20 = :CP_SMA20,
-                        CP_SMA50 = :CP_SMA50,
-                        CP_SMA100 = :CP_SMA100,
-                        CP_SMA200 = :CP_SMA200,
-                        {', '.join([f"`{category}_SMA20` = :{category}_SMA20" for category in categories.keys()])}
-                    WHERE `date` = :date
-                    """
-                    connection.execute(
-                        text(query_update),
-                        {
-                            "CP_SMA20": row["CP_SMA20"],
-                            "CP_SMA50": row["CP_SMA50"],
-                            "CP_SMA100": row["CP_SMA100"],
-                            "CP_SMA200": row["CP_SMA200"],
-                            **{f"{category}_SMA20": row[f"{category}_SMA20"] for category in categories.keys()},
-                            "date": row_date
-                        }
-                    )
-                else:
-                    # Nếu ngày chưa tồn tại, thực hiện chèn mới
-                    print(f"Inserting data for date: {row_date}")
-                    query_insert = f"""
-                    INSERT INTO {table_name} (
-                        `date`, CP_SMA20, CP_SMA50, CP_SMA100, CP_SMA200,
-                        {', '.join([f"`{category}_SMA20`" for category in categories.keys()])}
-                    ) VALUES (
-                        :date, :CP_SMA20, :CP_SMA50, :CP_SMA100, :CP_SMA200,
-                        {', '.join([f":{category}_SMA20" for category in categories.keys()])}
-                    )
-                    """
-                    connection.execute(
-                        text(query_insert),
-                        {
-                            "date": row_date,
-                            "CP_SMA20": row["CP_SMA20"],
-                            "CP_SMA50": row["CP_SMA50"],
-                            "CP_SMA100": row["CP_SMA100"],
-                            "CP_SMA200": row["CP_SMA200"],
-                            **{f"{category}_SMA20": row[f"{category}_SMA20"] for category in categories.keys()}
-                        }
-                    )
+                print(f"Rows deleted: {rows_deleted}")
+
+                # Thực hiện chèn dữ liệu mới
+                print(f"Inserting data for date: {row_date}")
+                query_insert = f"""
+                INSERT INTO {table_name} (
+                    `date`, CP_SMA20, CP_SMA50, CP_SMA100, CP_SMA200,
+                    {', '.join([f"`{category}_SMA20`" for category in categories.keys()])}
+                ) VALUES (
+                    :date, :CP_SMA20, :CP_SMA50, :CP_SMA100, :CP_SMA200,
+                    {', '.join([f":{category}_SMA20" for category in categories.keys()])}
+                )
+                """
+                connection.execute(
+                    text(query_insert),
+                    {
+                        "date": row_date,
+                        "CP_SMA20": row["CP_SMA20"],
+                        "CP_SMA50": row["CP_SMA50"],
+                        "CP_SMA100": row["CP_SMA100"],
+                        "CP_SMA200": row["CP_SMA200"],
+                        **{f"{category}_SMA20": row[f"{category}_SMA20"] for category in categories.keys()}
+                    }
+                )
+            
             connection.commit()
+            print("Changes committed successfully!")
     except Exception as e:
         print(f"Lỗi khi cập nhật dữ liệu: {e}")
+
 
 # Chạy chương trình
 if __name__ == "__main__":
