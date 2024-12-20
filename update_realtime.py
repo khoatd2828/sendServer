@@ -72,40 +72,30 @@ def process_data(data, historical_data):
     return None
 
 def save_to_db(df, engine):
-    """Lưu dữ liệu vào cơ sở dữ liệu"""
+    """Xóa và thêm mới dữ liệu vào cơ sở dữ liệu."""
     try:
-        query_check = """
-        SELECT date 
-        FROM uptrends 
-        WHERE ticker = :ticker AND date = :date
-        """
         with engine.connect() as connection:
-            result = connection.execute(text(query_check), {"ticker": df["ticker"].iloc[0], "date": df["date"].iloc[0]})
-            if result.fetchone():
-                print(f"Data for {df['date'].iloc[0].date()} already exists. Updating it...")
-                query_update = """
-                UPDATE uptrends
-                SET close = :close,
-                    SMA20 = :SMA20,
-                    EMA6 = :EMA6
-                WHERE ticker = :ticker AND date = :date
-                """
-                connection.execute(
-                    text(query_update),
-                    {
-                        "close": df["close"].iloc[0],
-                        "SMA20": df["SMA20"].iloc[0],
-                        "EMA6": df["EMA6"].iloc[0],
-                        "ticker": df["ticker"].iloc[0],
-                        "date": df["date"].iloc[0],
-                    }
-                )
-                print(f"Data for {df['date'].iloc[0].date()} updated successfully.")
-            else:
-                print("Data to be updated in the database:")
-                print(df)
-                df.to_sql("uptrends", con=engine, if_exists="append", index=False)
-                print(f"Data inserted successfully. {len(df)} new rows added.")
+            date_to_delete = df["date"].iloc[0].date()
+            print(f"Data to delete for {date_to_delete}:")
+            print(df)
+
+            delete_query = """
+            DELETE FROM uptrends
+            WHERE ticker = :ticker AND date = :date
+            """
+            rows_deleted = connection.execute(
+                text(delete_query),
+                {"ticker": df["ticker"].iloc[0], "date": date_to_delete},
+            ).rowcount
+            connection.commit()  
+            print(f"Rows deleted: {rows_deleted}.")
+
+            print(f"Inserting new data for date: {date_to_delete}...")
+            print("New data to insert:")
+            print(df)
+
+            df.to_sql("uptrends", con=engine, if_exists="append", index=False)
+            print(f"Data inserted successfully. {len(df)} new rows added.")
     except Exception as e:
         print(f"Error while saving to database: {e}")
 
