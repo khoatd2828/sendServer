@@ -14,6 +14,7 @@
                         <option value="all">Tất cả</option>
                     </select>
                 </div> -->
+                <input type="text" id="searchInput" placeholder="Tìm kiếm cổ phiếu..." class="border border-gray-300 rounded-md p-1 h-8 text-sm text-black" />
             </div>
             <div class="w-full">
                 <!-- TABLE -->
@@ -121,7 +122,6 @@
                                                 data-xephang="<?php echo $eitem[1]; ?>"
                                                 data-loai="<?php echo $eitem[2]; ?>"
                                                 data-luandiem="<?php echo $eitem[7]; ?>"
-                                                data-title="<?php echo $key; ?>"
                                                 data-signal="<?php echo $item['signal']; ?>"
                                                 data-giamua="<?php echo $item['recommendedPrice']; ?>"
                                                 data-ngaymua="<?php echo date('d/m/Y', strtotime($item['date'])); ?>"
@@ -348,7 +348,6 @@
                                                 data-xephang="<?php echo $eitem[1]; ?>"
                                                 data-loai="<?php echo $eitem[2]; ?>"
                                                 data-luandiem="<?php echo $eitem[7]; ?>"
-                                                data-title="<?php echo $key; ?>"
                                                 data-signal="<?php echo $item['signal']; ?>"
                                                 data-giamua="<?php echo $item['recommendedPrice']; ?>"
                                                 data-ngaymua="<?php echo date('d/m/Y', strtotime($item['date'])); ?>"
@@ -674,7 +673,7 @@
                 data = JSON.parse(data);
             }
 
-            console.log("data nhận được:", data);
+            console.log("Kết nối thành công");
 
             // Duyệt qua từng ticker trong dữ liệu
             Object.keys(data).forEach(ticker => {
@@ -763,12 +762,46 @@
             });
         };
 
-        eventSource.onerror = function(error) {
-            console.error('Lỗi kết nối SSE:', error);
-            eventSource.close();
+        eventSource.onerror = function(event) {
+            console.error('SSE Connection Error:', event);
+            console.log('Event target:', event.target);
+
+            if (event.target.readyState === EventSource.CLOSED) {
+                console.log('SSE connection was closed');
+            } else if (event.target.readyState === EventSource.CONNECTING) {
+                console.log('SSE reconnecting...');
+            }
         };
 
         console.log('SSE đã được kết nối');
+    });
+</script>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const pagination = document.querySelector('.pagination');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.table-fix-modal-btn');
+
+        let hasVisibleRows = false;
+
+        rows.forEach(row => {
+            const title = row.getAttribute('data-title').toLowerCase();
+            if (title.includes(searchTerm)) {
+                row.style.display = '';
+                hasVisibleRows = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (searchTerm) {
+            pagination.style.display = 'none';
+        } else {
+            pagination.style.display = hasVisibleRows ? '' : 'none';
+        }
     });
 </script>
 
