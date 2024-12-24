@@ -216,17 +216,6 @@ class HomeController extends Controller
         $json_dataN = $this->get_data($dateN);
         $dataN = $json_dataN['BuySellReply']['stockDatas'];
 
-        // $allDataN = [];
-        // for ($i = 0; $i < 30; $i++) {
-        //     $dateN = date('Y-m-d', strtotime("-$i days"));
-        //     $json_dataN = $this->get_data($dateN);
-        //     $dataN = $json_dataN['BuySellReply']['stockDatas'];
-
-        //     foreach ($dataN as $elementN) {
-        //         $allDataN[$elementN['ticker']][] = $elementN;
-        //     }
-        // }
-
         usort(
             $dataN,
             function ($element1, $element2) {
@@ -242,7 +231,6 @@ class HomeController extends Controller
         }
         $dataN = $resultN;
         $dateN = $json_dataN['BuySellReply']['date'];
-        // $dateN = date('Y-m-d', strtotime('-1 days', strtotime($dateN)));
 
         $dash5 = Dashboard::find(5);
         $dash4 = Dashboard::find(4);
@@ -256,6 +244,7 @@ class HomeController extends Controller
         foreach ($excel as $excelItem) {
             $resultExcel[$excelItem[0]][] = $excelItem;
         }
+
         return view('home.trading-history', compact('data', 'dataN', 'dateN', 'dash5', 'dash4', 'resultExcel'));
     }
 
@@ -278,9 +267,9 @@ class HomeController extends Controller
         $dash1 = Dashboard::find(1);
 
         $data = DB::table('uptrends')
-            ->where('ticker', 'VNINDEX') 
-            ->orderBy('date', 'desc')    
-            ->take(5)                   
+            ->where('ticker', 'VNINDEX')
+            ->orderBy('date', 'desc')
+            ->take(5)
             ->get();
 
         $data = $data->map(function ($row) {
@@ -440,7 +429,10 @@ class HomeController extends Controller
         foreach ($excel as $excelItem) {
             $resultExcel[$excelItem[0]][] = $excelItem;
         }
-        return view('home.lookup', compact('data', 'dataN', 'dateN', 'dash5', 'dash4', 'resultExcel'));
+
+        $dataH = $this->getLast40TradingSessions($date);
+
+        return view('home.lookup', compact('data', 'dataN', 'dataH', 'dateN', 'dash5', 'dash4', 'resultExcel'));
     }
 
     function get_data($date)
@@ -469,9 +461,11 @@ class HomeController extends Controller
     public function ajax()
     {
         if (Auth::check()) {
+            
+            $date = request()->input('date');
 
-            if (request()->date) {
-                $date = request()->date;
+            if (!$date) {
+                return response()->json(['error' => 'Ngày không hợp lệ'], 400);
             }
 
             $url = "https://stocktraders.vn/service/data/getBuySell";
