@@ -27,7 +27,7 @@
             </section>
             <section class="pt-10">
                 <div class="pl-4 mb-8 border-l-4 border-black border-white border-solid">
-                    <h1 class="font-bold text-primary">Emeralpha AI - TỔNG HỢP SỨC MẠNH THỊ TRƯỜNG</h1>
+                    <h1 class="font-bold text-primary">Emeralpha AI - Tổng hợp sức mạnh thị trường</h1>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -38,17 +38,16 @@
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: nowrap;">Sức mạnh<br>thị trường</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh Vnindex ngắn hạn</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh Vnindex trung hạn</th>
-                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh Vnindex trung dài hạn</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh Vnindex dài hạn</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh VN30</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh VN50</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành ngân hàng</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành chứng khoáng </th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành BDS</th>
-                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành bán lẻ và tiêu dùng</th>
-                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành công nghệ viễn thông</th>
-                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành dầu khí hóa chất</th>
-                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành thép xây dựng</th>
+                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành bán lẻ & tiêu dùng</th>
+                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành công nghệ & viễn thông</th>
+                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành dầu khí & hóa chất</th>
+                                <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành thép & xây dựng</th>
                                 <th class="border border-gray-700 px-4 py-2" style="white-space: normal;">Sức mạnh ngành xuất nhập khẩu</th>
                             </tr>
                         </thead>
@@ -56,13 +55,13 @@
                             @foreach($data as $item)
                             <tr class="text-gray-300 hover:bg-gray-700 text-center">
                                 <!-- Ngày -->
-                                <td class="border border-gray-700 px-4 py-2 text-yellow-300">{{ $item->date }}</td>
+                                <td class="border border-gray-700 px-4 py-2 text-yellow-300 whitespace-nowrap">{{ $item->date }}</td>
 
                                 <!-- Sức mạnh thị trường -->
-                                <td class="border border-gray-700 px-4 py-2 font-bold 
-                        {{ $item->market_strength == 'HƯNG PHẤN' ? 'text-green-500' : 
-                           ($item->market_strength == 'TRUNG TÍNH' ? 'text-yellow-500' : 
-                           ($item->market_strength == 'HOANG MANG' ? 'text-orange-500' : 'text-red-500')) }}">
+                                <td class="border border-gray-700 px-4 py-2 font-bold text-sm
+                        {{ $item->market_strength == 'HƯNG PHẤN CAO TRÀO' ? 'text-green-500' : 
+                           ($item->market_strength == 'LẠC QUAN KỲ VỌNG' ? 'text-yellow-500' : 
+                           ($item->market_strength == 'TRUNG TÍNH' ? 'text-orange-500' : 'text-red-500')) }}">
                                     {{ $item->market_strength }}
                                 </td>
 
@@ -79,14 +78,6 @@
                                     {{ number_format($item->CP_SMA50, 2) }}%
                                     @else
                                     {{ $item->CP_SMA50 }}
-                                    @endif
-                                </td>
-
-                                <td class="border border-gray-700 px-4 py-2">
-                                    @if(is_numeric($item->CP_SMA100))
-                                    {{ number_format($item->CP_SMA100, 2) }}%
-                                    @else
-                                    {{ $item->CP_SMA100 }}
                                     @endif
                                 </td>
 
@@ -185,7 +176,7 @@
             </section>
             <section class="pt-10">
                 <div class="pl-4 mb-8 border-l-4 border-black border-white border-solid">
-                    <h1 class="font-bold text-primary">Emeralpha AI - TOP 15 MÃ CỔ PHIẾU </h1>
+                    <h1 class="font-bold text-primary">Emeralpha AI - Top 15 mã cổ phiếu </h1>
                 </div>
 
                 <div class="overflow-x-auto">

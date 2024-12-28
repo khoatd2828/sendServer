@@ -299,13 +299,13 @@ class HomeController extends Controller
 
         $data = $data->map(function ($item) {
             if ($item->{'CP_SMA20'} >= 68) {
-                $item->market_strength = 'HƯNG PHẤN';
+                $item->market_strength = 'HƯNG PHẤN CAO TRÀO';
             } elseif ($item->{'CP_SMA20'} >= 55) {
-                $item->market_strength = 'TRUNG TÍNH';
+                $item->market_strength = 'LẠC QUAN KỲ VỌNG';
             } elseif ($item->{'CP_SMA20'} >= 40) {
-                $item->market_strength = 'HOANG MANG';
+                $item->market_strength = 'TRUNG TÍNH';
             } else {
-                $item->market_strength = 'HOẢNG SỢ';
+                $item->market_strength = 'HOẢNG SỢ CHÁN NẢN';
             }
             return $item;
         });
@@ -461,7 +461,7 @@ class HomeController extends Controller
     public function ajax()
     {
         if (Auth::check()) {
-            
+
             $date = request()->input('date');
 
             if (!$date) {
@@ -699,7 +699,7 @@ class HomeController extends Controller
             <?php } else { ?>
                 Không tìm thấy dữ liệu
             <?php } ?>
-<?php $output = ob_get_contents();
+        <?php $output = ob_get_contents();
             ob_end_clean();
             return $output;
         }
